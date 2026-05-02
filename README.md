@@ -2,25 +2,51 @@
 
 Hey there! 👋 Welcome to my backend assessment project. This is a full production-level Node.js + TypeScript backend that I designed to demonstrate enterprise software engineering patterns, algorithmic optimization, and microservice integration.
 
-## 🚀 What I Built
+## 🚀 Comprehensive Project Overview
 
-I took a foundational idea and built it out into a highly resilient, enterprise-ready architecture. Here is a breakdown of the core features I implemented:
+I didn't just write a simple script for this assessment; I completely refactored the provided scaffold into a highly resilient, enterprise-ready layered architecture. Here is a detailed breakdown of everything I built from the ground up:
 
-### 1. The Vehicle Maintenance Scheduler (0/1 Knapsack)
-When managing a fleet of vehicles needing maintenance and limited mechanic hours, you can't just pick vehicles randomly. I implemented a **Dynamic Programming (0/1 Knapsack)** algorithm to evaluate all possible combinations and select the exact set of vehicles that maximizes the total "impact" score without exceeding the available mechanic hours.
+### 1. Enterprise Architecture & Refactoring
+I completely restructured the codebase to follow a strict **Layered MVC/Service Architecture**. This ensures separation of concerns and massive scalability.
+- **`src/controllers/`**: Extracts HTTP requests, handles validation, and passes data down.
+- **`src/services/`**: Contains pure business logic, keeping it completely decoupled from Express.js.
+- **`src/repository/`**: Acts as the Data Access Layer, responsible for making robust network requests to the remote evaluation APIs to fetch Depots, Vehicles, and Notifications.
+- **`src/algorithms/`**: Houses the isolated, pure-function algorithmic solutions.
+- **`src/middleware/`**: Houses all custom interceptors (Auth, Logging, Error Handling, Performance).
 
-### 2. The Priority Inbox (Min Heap Priority Queue)
-If a user has hundreds of notifications, sorting them all just to find the top 10 is very inefficient ($O(N \log N)$). Instead, I built a custom **Min Heap Priority Queue** from scratch. This allows me to instantly pull out the top 10 highest-priority notifications (Placement > Result > Event) in a lightning-fast $O(N \log K)$ time.
+### 2. Algorithmic Optimization 1: Vehicle Maintenance Scheduler (0/1 Knapsack)
+The challenge required scheduling a subset of vehicles for maintenance to maximize the total "impact" without exceeding a hard limit on mechanic hours. 
+- **The Problem:** Picking vehicles greedily (highest impact first) fails because it might block combinations of smaller tasks that yield a higher total impact.
+- **My Solution:** I implemented a **Dynamic Programming 0/1 Knapsack Algorithm** (`src/algorithms/knapsack.ts`).
+- **How It Works:** I built a 2D array matrix to evaluate every possible combination of vehicles against every possible hour limit up to the maximum capacity. I then implemented a backtracking loop to trace through the matrix and extract the exact `TaskID`s of the vehicles selected. 
+- **Complexity:** $O(N \times W)$ where $N$ is the number of vehicles and $W$ is the mechanic hours.
 
-### 3. Reusable Remote Logging Middleware
-I built a custom logger that doesn't just print to the console—it securely streams logs to an external evaluation microservice via Axios with a Bearer token. 
-*I also included exponential backoff and retry logic in case the network hiccups!*
+### 3. Algorithmic Optimization 2: Priority Inbox (Min Heap Priority Queue)
+The challenge required taking a massive array of campus notifications and extracting only the top 10 highest-priority ones.
+- **The Problem:** Using standard `Array.prototype.sort()` takes $O(N \log N)$ time, which is incredibly slow when processing thousands or millions of notifications just to find the top 10.
+- **My Solution:** I built a custom **Min Heap Priority Queue** from scratch (`src/algorithms/minHeap.ts` and `priorityQueue.ts`).
+- **How It Works:** The Min Heap maintains a strict size of $K$ (10). As I iterate through the massive list of notifications, I compare each item to the root of the Min Heap (the lowest priority item currently in the top 10). If the new item is higher priority, I pop the root and insert the new item, re-heapifying the tree. I assigned custom weights (`Placement` = 3, `Result` = 2, `Event` = 1) and used timestamps as a tie-breaker.
+- **Complexity:** A lightning-fast $O(N \log K)$ time complexity.
 
-### 4. Production-Ready Architecture
-- **Centralized Error Handling**: No app crashes here! I ensured all errors are caught and returned as clean JSON.
-- **Request Tracing**: Every request gets a unique UUID so it can be tracked through the entire system.
-- **Performance Middleware**: Automatically tracks how long endpoints take to resolve and logs a warning if they are too slow.
-- **Security**: Hardened with Helmet, CORS, and strict TypeScript types.
+### 4. Advanced Remote Logging & Resiliency
+I built a custom enterprise logging middleware (`src/middleware/logger.ts`) that streams logs over HTTP instead of just printing them to a console.
+- **Authentication:** It automatically injects the Bearer Token from `.env` into the Axios headers.
+- **Strict Typing:** I created TypeScript interfaces (`src/types/`) to enforce that only exact log levels (`info`, `debug`, `error`) and exact stacks (`backend`) can be sent.
+- **Exponential Backoff & Retries:** I built a custom `retryHandler.ts` wrapper. If the external logging API fails or times out, my code doesn't crash. It automatically catches the error, waits 1 second, and retries up to 3 times before gracefully failing.
+
+### 5. Production-Ready Infrastructure
+To ensure the server is fully enterprise-ready, I implemented:
+- **Centralized Error Handling (`errorMiddleware.ts`)**: Replaces standard HTML error crashes with sanitized, standardized JSON error responses. It strips stack traces in production to prevent security leaks.
+- **Request Tracing (`requestIdMiddleware.ts`)**: Generates a unique UUID for every incoming HTTP request and attaches it to the headers. This allows us to track a specific request through the entire distributed system.
+- **Performance Profiling (`performanceMiddleware.ts`)**: Uses `process.hrtime()` to track the exact millisecond latency of every endpoint and warns if an API is too slow.
+- **Security Hardening**: Integrated `helmet` to secure HTTP headers and `cors` for cross-origin protection.
+
+### 6. System Design Documentation
+Beyond the code, I wrote an extensive, multi-stage Markdown document detailing how to scale this application to millions of users:
+- Addressed Database Schema design in PostgreSQL.
+- Optimized slow SQL queries using Covering and Partial Indexes.
+- Designed a real-time WebSocket architecture using Redis Pub/Sub.
+- Architected an asynchronous, event-driven bulk email system using Kafka/RabbitMQ and Dead Letter Queues to prevent the Node.js event loop from blocking.
 
 ---
 
@@ -81,8 +107,3 @@ To compile and run the production build:
 npm run build
 npm start
 ```
-
-## 📚 Further Reading
-- Dive into [architecture.md](./architecture.md) for a detailed breakdown of my system design.
-- Check out [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) for endpoints and sample outputs.
-- Read [notification_system_design.md](./notification_system_design.md) for my in-depth discussion on building scalable campus notifications using WebSockets, Redis, PostgreSQL, and Kafka.
