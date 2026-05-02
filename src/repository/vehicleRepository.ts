@@ -12,7 +12,7 @@ export const getVehicles = async (): Promise<IVehicle[]> => {
       headers: { Authorization: `Bearer ${ENV.TOKEN}` },
       timeout: 5000
     });
-    return response.data;
+    return response.data.vehicles;
   };
 
   const data = await withRetry(fetchFn, 3, 1000, "fetchVehicles");

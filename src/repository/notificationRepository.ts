@@ -12,7 +12,7 @@ export const getNotifications = async (): Promise<INotification[]> => {
       headers: { Authorization: `Bearer ${ENV.TOKEN}` },
       timeout: 5000
     });
-    return response.data;
+    return response.data.notifications;
   };
 
   const data = await withRetry(fetchFn, 3, 1000, "fetchNotifications");

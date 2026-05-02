@@ -12,7 +12,7 @@ export const getDepots = async (): Promise<IDepot[]> => {
       headers: { Authorization: `Bearer ${ENV.TOKEN}` },
       timeout: 5000
     });
-    return response.data;
+    return response.data.depots;
   };
 
   const data = await withRetry(fetchFn, 3, 1000, "fetchDepots");

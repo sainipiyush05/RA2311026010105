@@ -1,4 +1,4 @@
 export interface IDepot {
-  ID: string;
+  ID: number;
   MechanicHours: number;
 }

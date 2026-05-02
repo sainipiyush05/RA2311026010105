@@ -103,3 +103,18 @@ Use **Kafka** or **RabbitMQ** to implement an asynchronous worker architecture.
 3. A fan-out worker consumes the event and splits it into individual `send_notification` events.
 4. Email/DB workers consume these individual events independently.
 5. **Retries & Dead Letter Queues (DLQ):** If a specific email fails, it is placed in a retry queue with exponential backoff. If it fails 5 times, it is moved to a DLQ for manual inspection. This guarantees eventual consistency and fault tolerance.
+
+## Stage 6: Priority Inbox Implementation
+
+**The Problem:**
+The product manager requested a Priority Inbox to display the top $n$ (e.g., 10) most important unread notifications. Sorting the entire database table or array using standard algorithms takes $O(N \log N)$ time. As the notification volume grows to millions, this becomes computationally expensive and slow for real-time inbox rendering.
+
+**The Solution:**
+I implemented a custom **Min Heap Priority Queue** data structure in TypeScript (`src/algorithms/minHeap.ts`). 
+
+**How it maintains the top 10 efficiently:**
+1. A Min Heap is initialized with a maximum capacity of $K$ (where $K = 10$).
+2. As new notifications stream in or are fetched from the API, they are evaluated against the root of the Min Heap (which represents the *lowest* priority notification currently in the top 10).
+3. Priority weights are assigned: `Placement = 3`, `Result = 2`, `Event = 1`. If weights are equal, the more recent `Timestamp` wins.
+4. If a new notification has a higher priority than the root, the root is popped and the new notification is inserted, taking $O(\log K)$ time to re-heapify.
+5. **Time Complexity:** The total time complexity is vastly reduced to **$O(N \log K)$**. Because $K$ is a small constant (10), this effectively approaches $O(N)$, allowing the system to instantly extract the top 10 notifications regardless of how massive the total array becomes.
